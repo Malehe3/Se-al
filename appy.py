@@ -1,8 +1,5 @@
 import streamlit as st
-from PIL import Image
-import speech_recognition as sr
-import threading
-import time
+from PIL import Image, ImageDraw, ImageFont
 
 st.title("¡Aprende Lenguaje de Señas Colombiano!")
 
@@ -27,52 +24,22 @@ st.write("""
 Captura una característica distintiva, ya sea física, de personalidad o relacionada con una experiencia memorable y crea tu propia seña:
 """)
 
-# Inicialización de variables para la foto y el reconocimiento de voz
-img_file_buffer = None
-recognizer = sr.Recognizer()
+voice_command = st.text_input("Diga 'foto' para tomar una foto")
 
-# Función para escuchar la palabra "Foto" y tomar la foto
-def listen_for_photo():
-    global img_file_buffer
-    while True:
-        with sr.Microphone() as source:
-            print("Escuchando...")
-            audio = recognizer.listen(source)
-            try:
-                command = recognizer.recognize_google(audio, language="es-ES")
-                if "foto" in command.lower():
-                    print("Comando 'foto' detectado. Tomando foto...")
-                    img_file_buffer = st.camera_input("Toma una Foto")
-                    if img_file_buffer is not None:
-                        image = Image.open(img_file_buffer)
-                        st.image(image, caption="Tu Señal de Identificación")
-                        st.download_button(
-                            label="Descargar",
-                            data=img_file_buffer.getvalue(),
-                            file_name="señal_identificacion.jpg",
-                            mime="image/jpeg"
-                        )
-            except sr.UnknownValueError:
-                pass
-            except sr.RequestError as e:
-                print(f"No se pudo completar la solicitud de reconocimiento de voz; {e}")
+if voice_command.lower() == "foto":
+    img_file_buffer = st.camera_input("Toma una Foto")
 
-# Iniciar el reconocimiento de voz en un hilo separado para no bloquear la interfaz de Streamlit
-thread = threading.Thread(target=listen_for_photo)
-thread.start()
-
-# Botón para tomar foto manualmente
-img_file_buffer = st.camera_input("Toma una Foto manualmente")
-
-if img_file_buffer is not None:
-    image = Image.open(img_file_buffer)
-    st.image(image, caption="Tu Señal de Identificación")
-    st.download_button(
-        label="Descargar",
-        data=img_file_buffer.getvalue(),
-        file_name="señal_identificacion.jpg",
-        mime="image/jpeg"
-    )
+    if img_file_buffer is not None:
+        image = Image.open(img_file_buffer)
+        st.image(image, caption="Tu Señal de Identificación")
+        
+        image.save("señal_identificacion.jpg")
+        st.download_button(
+            label="Descargar",
+            data=open("señal_identificacion.jpg", "rb").read(),
+            file_name="señal_identificacion.jpg",
+            mime="image/jpeg" 
+        )
 
 st.write("""
 ### ¡Comparte tu Señal!
