@@ -46,7 +46,7 @@ Captura una característica distintiva, ya sea física, de personalidad o relaci
 
 # Esperar el comando de voz del usuario
 with sr.Microphone() as source:
-    st.write("Diga 'foto' para tomar una foto")
+    st.write("Di 'foto' para tomar una foto")
     audio_data = r.record(source, duration=5)  # Escuchar durante 5 segundos
     try:
         text = r.recognize_google(audio_data, language="es-ES")
