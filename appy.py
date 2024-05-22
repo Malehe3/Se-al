@@ -3,7 +3,6 @@ from PIL import Image
 import speech_recognition as sr
 import threading
 import time
-import io
 
 st.title("¡Aprende Lenguaje de Señas Colombiano!")
 
@@ -31,59 +30,49 @@ Captura una característica distintiva, ya sea física, de personalidad o relaci
 # Inicialización de variables para la foto y el reconocimiento de voz
 img_file_buffer = None
 recognizer = sr.Recognizer()
-captured_image = None
 
 # Función para escuchar la palabra "Foto" y tomar la foto
 def listen_for_photo():
-    global img_file_buffer, captured_image
-    with sr.Microphone() as source:
-        while True:
-            print("Di 'Foto' para tomar la foto.")  # Cambiado a print para evitar la sobrecarga de la interfaz de Streamlit
+    global img_file_buffer
+    while True:
+        with sr.Microphone() as source:
+            print("Escuchando...")
             audio = recognizer.listen(source)
             try:
                 command = recognizer.recognize_google(audio, language="es-ES")
                 if "foto" in command.lower():
-                    print("Tomando foto en 1 segundo...")
-                    time.sleep(1)
-                    st.session_state["take_photo"] = True
+                    print("Comando 'foto' detectado. Tomando foto...")
+                    img_file_buffer = st.camera_input("Toma una Foto")
+                    if img_file_buffer is not None:
+                        image = Image.open(img_file_buffer)
+                        st.image(image, caption="Tu Señal de Identificación")
+                        st.download_button(
+                            label="Descargar",
+                            data=img_file_buffer.getvalue(),
+                            file_name="señal_identificacion.jpg",
+                            mime="image/jpeg"
+                        )
             except sr.UnknownValueError:
-                print("No se entendió la palabra. Intenta nuevamente.")  # Cambiado a print
+                pass
             except sr.RequestError as e:
-                print(f"No se pudo completar la solicitud de reconocimiento de voz; {e}")  # Cambiado a print
+                print(f"No se pudo completar la solicitud de reconocimiento de voz; {e}")
 
 # Iniciar el reconocimiento de voz en un hilo separado para no bloquear la interfaz de Streamlit
-if 'take_photo' not in st.session_state:
-    st.session_state["take_photo"] = False
-
 thread = threading.Thread(target=listen_for_photo)
-thread.daemon = True
 thread.start()
 
 # Botón para tomar foto manualmente
-if st.button("Toma una Foto manualmente"):
-    st.session_state["take_photo"] = True
-
-if st.session_state["take_photo"]:
-    img_file_buffer = st.camera_input("Toma una Foto")
+img_file_buffer = st.camera_input("Toma una Foto manualmente")
 
 if img_file_buffer is not None:
     image = Image.open(img_file_buffer)
     st.image(image, caption="Tu Señal de Identificación")
-    
-    # Guardar la imagen en un buffer en memoria
-    buf = io.BytesIO()
-    image.save(buf, format="JPEG")
-    byte_im = buf.getvalue()
-    
     st.download_button(
         label="Descargar",
-        data=byte_im,
+        data=img_file_buffer.getvalue(),
         file_name="señal_identificacion.jpg",
         mime="image/jpeg"
     )
-    
-    # Reset the state to avoid continuous capturing
-    st.session_state["take_photo"] = False
 
 st.write("""
 ### ¡Comparte tu Señal!
